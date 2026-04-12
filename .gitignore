@@ -1,0 +1,10 @@
+.vscode/
+.env
+__pycache__/
+.claude/settings.local.json
+.tmp.driveupload/**
+logs/
+*.egg-info/
+dist/
+build/
+.pytest_cache/

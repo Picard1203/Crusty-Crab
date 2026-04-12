@@ -1,0 +1,74 @@
+@startuml Krusty Crab - Layered Architecture
+!pragma layout smetana
+
+package "Presentation Layer" {
+    [auth_router]
+    [order_router]
+    [menu_router]
+    [statistics_router]
+    [user_router]
+}
+
+package "Business Logic Layer" {
+    [AuthService]
+    [OrderService]
+    [MenuItemService]
+    [StatisticsService]
+    [UserService]
+}
+
+package "Data Access Layer" {
+    [OrderRepository <<ABC>>]
+    [MenuItemRepository <<ABC>>]
+    [UserRepository <<ABC>>]
+    [CounterRepository <<ABC>>]
+    [MongoOrderRepository]
+    [MongoMenuItemRepository]
+    [MongoUserRepository]
+    [MongoCounterRepository]
+}
+
+package "Factory Layer" {
+    [OrderFactory]
+    [MenuItemFactory]
+}
+
+package "Infrastructure" {
+    [Database <<ABC>>]
+    [MongoDatabase]
+    [MongoDB Replica Set]
+}
+
+package "Cross-Cutting" {
+    [deps.py - Composition Root]
+    [RequestLoggingMiddleware]
+    [AuthService - JWT]
+    [Settings]
+    [Logging]
+}
+
+[auth_router] --> [AuthService]
+[order_router] --> [OrderService]
+[menu_router] --> [MenuItemService]
+[statistics_router] --> [StatisticsService]
+[user_router] --> [UserService]
+
+[OrderService] --> [OrderRepository <<ABC>>]
+[OrderService] --> [MenuItemRepository <<ABC>>]
+[OrderService] --> [OrderFactory]
+[MenuItemService] --> [MenuItemRepository <<ABC>>]
+[MenuItemService] --> [MenuItemFactory]
+[StatisticsService] --> [OrderRepository <<ABC>>]
+[AuthService] --> [UserRepository <<ABC>>]
+[UserService] --> [UserRepository <<ABC>>]
+
+[OrderRepository <<ABC>>] <|-- [MongoOrderRepository]
+[MenuItemRepository <<ABC>>] <|-- [MongoMenuItemRepository]
+[UserRepository <<ABC>>] <|-- [MongoUserRepository]
+[CounterRepository <<ABC>>] <|-- [MongoCounterRepository]
+
+[MongoOrderRepository] --> [MongoDB Replica Set]
+[MongoDatabase] --> [MongoDB Replica Set]
+[Database <<ABC>>] <|-- [MongoDatabase]
+
+@enduml

@@ -1,0 +1,41 @@
+@startuml Krusty Crab - Order Creation Sequence
+
+actor Client
+participant "order_router" as Router
+participant "OrderService" as Service
+participant "OrderFactory" as Factory
+participant "MenuItemRepository" as MenuRepo
+participant "CounterRepository" as Counter
+participant "OrderRepository" as OrderRepo
+database "MongoDB" as DB
+
+Client -> Router: POST /orders\n{orderer_name, items}
+Router -> Service: create_order(data, current_user)
+Service -> Factory: create(data)
+Factory -> Counter: get_next_sequence("order_number")
+Counter -> DB: findOneAndUpdate($inc sequence_value)
+DB --> Counter: next_value
+Counter --> Factory: order_number
+
+loop for each item in data.items
+    Factory -> MenuRepo: get_by_name(item_name)
+    MenuRepo -> DB: find_one(name == item_name)
+    DB --> MenuRepo: MenuItemDocument
+    MenuRepo --> Factory: item or None
+    alt item not found or inactive
+        Factory --> Service: MenuItemUnavailableException
+        Service --> Router: 422 Unprocessable Entity
+        Router --> Client: {"detail": "Item ... unavailable"}
+    end
+end
+
+Factory -> Factory: compute total_price\nfrom item_price_snapshot
+Factory --> Service: OrderDocument(status=order_received)
+Service -> OrderRepo: create(order_doc)
+OrderRepo -> DB: insert order
+DB --> OrderRepo: saved document
+OrderRepo --> Service: OrderDocument
+Service --> Router: OrderDocument
+Router --> Client: 201 {order_number, total_price, status, ...}
+
+@enduml

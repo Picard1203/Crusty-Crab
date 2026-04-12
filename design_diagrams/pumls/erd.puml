@@ -1,0 +1,54 @@
+@startuml Krusty Crab - Entity Relationship Diagram
+!pragma layout smetana
+
+entity "orders" {
+    * _id: ObjectId
+    --
+    * order_number: int (unique)
+    * orderer_name: str
+    * items: List[str]
+    * item_price_snapshot: List[float]
+    * total_price: float
+    * status: OrderStatus
+    * created_at: datetime
+    * updated_at: datetime
+}
+
+entity "menu_items" {
+    * _id: ObjectId
+    --
+    * item_number: int (unique)
+    * name: str (unique)
+    * price: float
+    * is_active: bool
+    * created_at: datetime
+    * updated_at: datetime
+}
+
+entity "users" {
+    * _id: ObjectId
+    --
+    * username: str (unique)
+    * email: str (unique)
+    * hashed_password: str
+    * role: UserRole
+    * is_active: bool
+    * created_at: datetime
+}
+
+entity "counters" {
+    * _id: str (sequence_name)
+    --
+    * sequence_value: int
+}
+
+orders }o--o{ menu_items : "items reference names"
+users ||--o{ orders : "orderer_name = username"
+
+note right of orders
+    orderer_name links to users.username
+    items[] links to menu_items.name (denormalized)
+    item_price_snapshot[] mirrors prices at order time
+end note
+
+@enduml
