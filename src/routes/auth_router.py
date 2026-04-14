@@ -49,6 +49,7 @@ async def register(
 @router.post(
     "/login",
     response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
 )
 @limiter.limit("5/minute")
 async def login(
@@ -73,6 +74,7 @@ async def login(
 @router.post(
     "/refresh",
     response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def refresh(
     data: TokenRefreshRequest,
