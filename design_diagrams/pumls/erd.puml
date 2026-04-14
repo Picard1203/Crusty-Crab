@@ -1,12 +1,19 @@
 @startuml Krusty Crab - Entity Relationship Diagram
 !pragma layout smetana
 
-entity "orders" {
-    * _id: ObjectId
+skinparam EntityBorderColor #666666
+skinparam EntityBackgroundColor #FFFDF0
+skinparam EntityFontStyle bold
+skinparam ArrowColor #555555
+skinparam NoteBackgroundColor #F8F8FF
+skinparam NoteBorderColor #AAAAAA
+
+entity "orders" #DDEEFF {
+    * _id: ObjectId <<PK>>
     --
-    * order_number: int (unique)
-    * orderer_name: str
-    * items: List[str]
+    * order_number: int <<unique>>
+    * orderer_name: str <<FK → users.username>>
+    * items: List[str] <<denormalized names>>
     * item_price_snapshot: List[float]
     * total_price: float
     * status: OrderStatus
@@ -14,41 +21,47 @@ entity "orders" {
     * updated_at: datetime
 }
 
-entity "menu_items" {
-    * _id: ObjectId
+entity "menu_items" #DDFFD4 {
+    * _id: ObjectId <<PK>>
     --
-    * item_number: int (unique)
-    * name: str (unique)
+    * item_number: int <<unique>>
+    * name: str <<unique>>
     * price: float
     * is_active: bool
     * created_at: datetime
     * updated_at: datetime
 }
 
-entity "users" {
-    * _id: ObjectId
+entity "users" #FFE8CC {
+    * _id: ObjectId <<PK>>
     --
-    * username: str (unique)
-    * email: str (unique)
+    * username: str <<unique>>
+    * email: str <<unique>>
     * hashed_password: str
     * role: UserRole
     * is_active: bool
     * created_at: datetime
 }
 
-entity "counters" {
-    * _id: str (sequence_name)
+entity "counters" #F0E8FF {
+    * _id: str <<sequence_name>>
     --
     * sequence_value: int
 }
 
-orders }o--o{ menu_items : "items reference names"
+orders }o--o{ menu_items : "items[] references names\n(denormalized at order time)"
 users ||--o{ orders : "orderer_name = username"
 
+note bottom of counters
+    Provides auto-increment IDs.
+    One document per sequence:
+    "order_number", "menu_item_number"
+end note
+
 note right of orders
-    orderer_name links to users.username
-    items[] links to menu_items.name (denormalized)
-    item_price_snapshot[] mirrors prices at order time
+    item_price_snapshot[] captures prices
+    at the moment of order creation —
+    immune to future menu price changes.
 end note
 
 @enduml
