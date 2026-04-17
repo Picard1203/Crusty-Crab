@@ -12,5 +12,3 @@ from src.repositories.mongodb.mongo_order_repository import (
 from src.repositories.mongodb.mongo_user_repository import (
     MongoUserRepository,
 )
-
-

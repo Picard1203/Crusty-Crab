@@ -54,9 +54,7 @@ class MongoMenuItemRepository(MenuItemRepository):
             Optional[MenuItemDocument]: The item if found, None otherwise.
         """
         logger.debug(f"Fetching menu item by name '{name}'")
-        return await MenuItemDocument.find_one(
-            MenuItemDocument.name == name
-        )
+        return await MenuItemDocument.find_one(MenuItemDocument.name == name)
 
     async def get_active_items(self) -> List[MenuItemDocument]:
         """Retrieve all menu items that are currently active.
@@ -88,10 +86,7 @@ class MongoMenuItemRepository(MenuItemRepository):
             f"skip={skip}, limit={limit}"
         )
         return (
-            await MenuItemDocument.find(query)
-            .skip(skip)
-            .limit(limit)
-            .to_list()
+            await MenuItemDocument.find(query).skip(skip).limit(limit).to_list()
         )
 
     async def create(self, entity: MenuItemDocument) -> MenuItemDocument:

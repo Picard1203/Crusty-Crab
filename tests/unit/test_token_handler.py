@@ -5,7 +5,7 @@ from typing import Any, Dict
 import pytest
 
 from src.auth.token_handler import TokenHandler
-from src.exceptions import AuthenticationException
+from src.exceptions import AuthenticationError
 
 
 class TestTokenHandler:
@@ -52,22 +52,22 @@ class TestTokenHandler:
     def test_decode_wrong_type_raises(
         self, token_handler: TokenHandler
     ) -> None:
-        """Mismatching token type raises AuthenticationException.
+        """Mismatching token type raises AuthenticationError.
 
         Args:
             token_handler (TokenHandler): The token handler.
         """
         token: str = token_handler.create_access_token({"sub": "testuser"})
-        with pytest.raises(AuthenticationException):
+        with pytest.raises(AuthenticationError):
             token_handler.decode_token(token, expected_type="refresh")
 
     def test_decode_invalid_token_raises(
         self, token_handler: TokenHandler
     ) -> None:
-        """Malformed token string raises AuthenticationException.
+        """Malformed token string raises AuthenticationError.
 
         Args:
             token_handler (TokenHandler): The token handler.
         """
-        with pytest.raises(AuthenticationException):
+        with pytest.raises(AuthenticationError):
             token_handler.decode_token("not.a.valid.token")

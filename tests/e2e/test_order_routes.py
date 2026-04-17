@@ -37,7 +37,9 @@ class TestCreateOrder:
         assert data["total_price"] == 66.0
 
     async def test_unauthenticated_returns_401(
-        self, client: AsyncClient, seed_menu: None  # noqa: ARG002
+        self,
+        client: AsyncClient,
+        seed_menu: None,  # noqa: ARG002
     ) -> None:
         """Unauthenticated order creation returns 401."""
         response = await client.post(
@@ -99,9 +101,7 @@ class TestGetOrder:
         )
         other_headers = {"Authorization": f"Bearer {other_token}"}
         number = seed_order["order_number"]
-        response = await client.get(
-            f"/orders/{number}", headers=other_headers
-        )
+        response = await client.get(f"/orders/{number}", headers=other_headers)
         assert response.status_code == 403
 
     async def test_worker_can_get_any_order(
@@ -121,9 +121,7 @@ class TestGetOrder:
             seed_order (Dict): An order owned by guestuser.
         """
         number = seed_order["order_number"]
-        response = await client.get(
-            f"/orders/{number}", headers=worker_headers
-        )
+        response = await client.get(f"/orders/{number}", headers=worker_headers)
         assert response.status_code == 200
 
 

@@ -10,7 +10,7 @@ from src.auth.password_handler import PasswordHandler
 from src.auth.token_handler import TokenHandler
 from src.database import Database
 from src.enums import UserRole
-from src.exceptions import AuthorizationException
+from src.exceptions import AuthorizationError
 from src.factories import MenuItemFactory, OrderFactory
 from src.models import UserDocument
 from src.repositories import (
@@ -215,7 +215,7 @@ async def get_current_user(
         UserDocument: The authenticated user.
 
     Raises:
-        AuthenticationException: If the token is invalid or user not found.
+        AuthenticationError: If the token is invalid or user not found.
     """
     return await auth_service.get_current_user(token)
 
@@ -232,12 +232,10 @@ async def require_worker(
         UserDocument: The authenticated user if authorized.
 
     Raises:
-        AuthorizationException: If the user is not a worker or administrator.
+        AuthorizationError: If the user is not a worker or administrator.
     """
     if current_user.role not in (UserRole.WORKER, UserRole.ADMINISTRATOR):
-        raise AuthorizationException(
-            "Worker or administrator role required"
-        )
+        raise AuthorizationError("Worker or administrator role required")
     return current_user
 
 
@@ -253,8 +251,8 @@ async def require_administrator(
         UserDocument: The authenticated user if authorized.
 
     Raises:
-        AuthorizationException: If the user is not an administrator.
+        AuthorizationError: If the user is not an administrator.
     """
     if current_user.role != UserRole.ADMINISTRATOR:
-        raise AuthorizationException("Administrator role required")
+        raise AuthorizationError("Administrator role required")
     return current_user
