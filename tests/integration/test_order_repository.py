@@ -125,9 +125,7 @@ class TestOrderRepository:
     async def test_sum_total_price(self) -> None:
         """sum_total_price aggregates correctly."""
         repo = MongoOrderRepository()
-        await _insert_order(
-            repo, order_number=1, prices=[66.0, 42.0]
-        )
+        await _insert_order(repo, order_number=1, prices=[66.0, 42.0])
         await _insert_order(
             repo, order_number=2, items=["Yellow Rice"], prices=[18.0]
         )

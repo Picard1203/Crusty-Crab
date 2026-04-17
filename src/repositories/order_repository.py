@@ -60,9 +60,7 @@ class OrderRepository(BaseRepository):
         raise NotImplementedError
 
     @abstractmethod
-    async def aggregate_top_customers(
-        self, limit: int
-    ) -> List[Dict[str, Any]]:
+    async def aggregate_top_customers(self, limit: int) -> List[Dict[str, Any]]:
         """Return top customers ranked by total spend.
 
         Args:

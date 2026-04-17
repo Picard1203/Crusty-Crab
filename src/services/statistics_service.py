@@ -57,7 +57,10 @@ class StatisticsService:
         logger.info("Fetching daily average profits")
         total = await self._order_repo.sum_total_price({})
         distinct_days = await self._order_repo.count_distinct_order_days()
-        average = 0.0 if distinct_days == 0 else total / distinct_days
+        if distinct_days == 0:
+            average = 0.0
+        else:
+            average = total / distinct_days
         return DailyProfitsResponse(total=total, daily_average=average)
 
     async def get_profits_by_date(
@@ -104,7 +107,8 @@ class StatisticsService:
             return StatisticsResponse(value=0.0, label="N/A")
         most_profitable = max(items, key=lambda item: item["total_revenue"])
         return StatisticsResponse(
-            value=most_profitable["total_revenue"], label=most_profitable["name"]
+            value=most_profitable["total_revenue"],
+            label=most_profitable["name"],
         )
 
     async def get_least_profitable_item(self) -> StatisticsResponse:
@@ -119,7 +123,8 @@ class StatisticsService:
             return StatisticsResponse(value=0.0, label="N/A")
         least_profitable = min(items, key=lambda item: item["total_revenue"])
         return StatisticsResponse(
-            value=least_profitable["total_revenue"], label=least_profitable["name"]
+            value=least_profitable["total_revenue"],
+            label=least_profitable["name"],
         )
 
     async def get_orders_by_status(self) -> List[OrderStatusBreakdownResponse]:
@@ -149,9 +154,12 @@ class StatisticsService:
         results = await self._order_repo.aggregate_by_hour()
         if len(results) == 0:
             return BusiestHourResponse(hour=0, order_count=0)
-        busiest_hour_data = max(results, key=lambda hour_data: hour_data["order_count"])
+        busiest_hour_data = max(
+            results, key=lambda hour_data: hour_data["order_count"]
+        )
         return BusiestHourResponse(
-            hour=busiest_hour_data["hour"], order_count=busiest_hour_data["order_count"]
+            hour=busiest_hour_data["hour"],
+            order_count=busiest_hour_data["order_count"],
         )
 
     async def get_average_order_size(self) -> StatisticsResponse:
@@ -164,9 +172,7 @@ class StatisticsService:
         average = await self._order_repo.get_average_items_per_order()
         return StatisticsResponse(value=average)
 
-    async def get_top_customers(
-        self, limit: int
-    ) -> List[TopCustomerResponse]:
+    async def get_top_customers(self, limit: int) -> List[TopCustomerResponse]:
         """Return the top customers ranked by total spend.
 
         Args:

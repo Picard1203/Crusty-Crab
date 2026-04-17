@@ -70,8 +70,7 @@ async def _seed_menu_if_empty() -> None:
     existing_count = await menu_repo.count({})
     if existing_count > 0:
         logger.info(
-            f"Menu collection already has {existing_count} items, "
-            "skipping seed"
+            f"Menu collection already has {existing_count} items, skipping seed"
         )
         return
     logger.info("Seeding default menu items")
@@ -90,9 +89,7 @@ async def _seed_menu_if_empty() -> None:
             updated_at=now,
         )
         await menu_repo.create(item)
-        logger.info(
-            f"Seeded menu item #{item_number}: {item_data['name']}"
-        )
+        logger.info(f"Seeded menu item #{item_number}: {item_data['name']}")
 
 
 def create_app() -> FastAPI:

@@ -33,7 +33,7 @@ line-length = 80
 # TID = flake8-tidy-imports: check for tidy imports
 # ARG = flake8-unused-arguments: check for unused arguments
 select = ["A", "B", "C4", "D", "E", "F", "I", "PIE", "PLC", "PLE", "PLW", "RUF", "SIM", "TID", "ARG"]
-ignore = ["D413", "D203", "D213", "B008", "E501"]
+ignore = ["D413", "D203", "D213", "B008", "E501", "SIM108"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

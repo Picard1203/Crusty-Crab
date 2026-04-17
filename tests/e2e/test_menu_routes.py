@@ -11,7 +11,9 @@ class TestPublicMenu:
     """Tests for public GET /menu endpoints."""
 
     async def test_get_active_menu_is_public(
-        self, client: AsyncClient, seed_menu: None  # noqa: ARG002
+        self,
+        client: AsyncClient,
+        seed_menu: None,  # noqa: ARG002
     ) -> None:
         """GET /menu/ is accessible without authentication."""
         response = await client.get("/menu/")

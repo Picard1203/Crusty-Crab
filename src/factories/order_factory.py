@@ -6,7 +6,7 @@ from typing import Any, List, Tuple
 
 from src.constants.sequence_constants import ORDER_NUMBER_SEQUENCE
 from src.enums import OrderStatus
-from src.exceptions import MenuItemUnavailableException
+from src.exceptions import MenuItemUnavailableError
 from src.factories.document_factory import DocumentFactory
 from src.models import OrderDocument
 from src.repositories import CounterRepository, MenuItemRepository
@@ -52,7 +52,7 @@ class OrderFactory(DocumentFactory):
             OrderDocument: The constructed document, ready for persistence.
 
         Raises:
-            MenuItemUnavailableException: If any item is not in the menu
+            MenuItemUnavailableError: If any item is not in the menu
                 or is inactive.
         """
         order_number = await self._counter_repo.get_next_sequence(
@@ -86,14 +86,14 @@ class OrderFactory(DocumentFactory):
             Tuple[List[float], float]: (price_snapshot, total_price).
 
         Raises:
-            MenuItemUnavailableException: If any item is not found
+            MenuItemUnavailableError: If any item is not found
                 in the menu or is marked inactive.
         """
         price_snapshot: List[float] = []
         for item_name in items:
             menu_item = await self._menu_item_repo.get_by_name(item_name)
             if menu_item is None or menu_item.is_active is False:
-                raise MenuItemUnavailableException(
+                raise MenuItemUnavailableError(
                     f"Menu item '{item_name}' is not available"
                 )
             price_snapshot.append(menu_item.price)

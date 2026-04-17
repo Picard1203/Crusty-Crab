@@ -72,7 +72,9 @@ class TestMenuItemRepository:
     async def test_get_active_items_excludes_inactive(self) -> None:
         """get_active_items excludes soft-deleted items."""
         repo = MongoMenuItemRepository()
-        await _insert_item(repo, item_number=1, name="Active Item", is_active=True)
+        await _insert_item(
+            repo, item_number=1, name="Active Item", is_active=True
+        )
         await _insert_item(
             repo, item_number=2, name="Inactive Item", is_active=False
         )

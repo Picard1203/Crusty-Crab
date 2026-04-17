@@ -14,9 +14,7 @@ logger = logging.getLogger(__name__)
 class MongoUserRepository(UserRepository):
     """Beanie-based implementation of UserRepository."""
 
-    async def get_by_id(
-        self, entity_id: ObjectId
-    ) -> Optional[UserDocument]:
+    async def get_by_id(self, entity_id: ObjectId) -> Optional[UserDocument]:
         """Retrieve a user by MongoDB ObjectId.
 
         Args:
@@ -38,9 +36,7 @@ class MongoUserRepository(UserRepository):
             Optional[UserDocument]: The user if found, None otherwise.
         """
         logger.debug(f"Fetching user by username '{username}'")
-        return await UserDocument.find_one(
-            UserDocument.username == username
-        )
+        return await UserDocument.find_one(UserDocument.username == username)
 
     async def get_by_email(self, email: str) -> Optional[UserDocument]:
         """Retrieve a user by their unique email address.
@@ -69,12 +65,9 @@ class MongoUserRepository(UserRepository):
         """
         query = self._build_query(filters)
         logger.debug(
-            f"Querying users with filters {filters}, "
-            f"skip={skip}, limit={limit}"
+            f"Querying users with filters {filters}, skip={skip}, limit={limit}"
         )
-        return (
-            await UserDocument.find(query).skip(skip).limit(limit).to_list()
-        )
+        return await UserDocument.find(query).skip(skip).limit(limit).to_list()
 
     async def create(self, entity: UserDocument) -> UserDocument:
         """Persist a new user document to MongoDB.

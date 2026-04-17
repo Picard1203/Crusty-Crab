@@ -14,9 +14,7 @@ logger = logging.getLogger(__name__)
 class MongoOrderRepository(OrderRepository):
     """Beanie-based implementation of OrderRepository."""
 
-    async def get_by_id(
-        self, entity_id: ObjectId
-    ) -> Optional[OrderDocument]:
+    async def get_by_id(self, entity_id: ObjectId) -> Optional[OrderDocument]:
         """Retrieve an order by MongoDB ObjectId.
 
         Args:
@@ -62,9 +60,7 @@ class MongoOrderRepository(OrderRepository):
             f"Querying orders with filters {filters}, "
             f"skip={skip}, limit={limit}"
         )
-        return (
-            await OrderDocument.find(query).skip(skip).limit(limit).to_list()
-        )
+        return await OrderDocument.find(query).skip(skip).limit(limit).to_list()
 
     async def create(self, entity: OrderDocument) -> OrderDocument:
         """Persist a new order document to MongoDB.
@@ -75,9 +71,7 @@ class MongoOrderRepository(OrderRepository):
         Returns:
             OrderDocument: The inserted document with _id populated.
         """
-        logger.info(
-            f"Creating order with order_number {entity.order_number}"
-        )
+        logger.info(f"Creating order with order_number {entity.order_number}")
         await entity.insert()
         return entity
 
@@ -204,9 +198,7 @@ class MongoOrderRepository(OrderRepository):
             )
         return hourly_breakdown
 
-    async def aggregate_top_customers(
-        self, limit: int
-    ) -> List[Dict[str, Any]]:
+    async def aggregate_top_customers(self, limit: int) -> List[Dict[str, Any]]:
         """Return top customers ranked by cumulative spend.
 
         Args:
@@ -251,9 +243,7 @@ class MongoOrderRepository(OrderRepository):
             {
                 "$project": {
                     "zipped": {
-                        "$zip": {
-                            "inputs": ["$items", "$item_price_snapshot"]
-                        }
+                        "$zip": {"inputs": ["$items", "$item_price_snapshot"]}
                     }
                 }
             },
@@ -261,9 +251,7 @@ class MongoOrderRepository(OrderRepository):
             {
                 "$group": {
                     "_id": {"$arrayElemAt": ["$zipped", 0]},
-                    "total_revenue": {
-                        "$sum": {"$arrayElemAt": ["$zipped", 1]}
-                    },
+                    "total_revenue": {"$sum": {"$arrayElemAt": ["$zipped", 1]}},
                 }
             },
             {"$sort": {"total_revenue": -1}},
@@ -273,7 +261,10 @@ class MongoOrderRepository(OrderRepository):
         item_profitability = []
         for result in results:
             item_profitability.append(
-                {"name": result["_id"], "total_revenue": result["total_revenue"]}
+                {
+                    "name": result["_id"],
+                    "total_revenue": result["total_revenue"],
+                }
             )
         return item_profitability
 

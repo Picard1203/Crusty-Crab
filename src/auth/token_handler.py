@@ -13,7 +13,7 @@ from src.constants.auth_constants import (
     JWT_TYPE_CLAIM,
     REFRESH_TOKEN_TYPE,
 )
-from src.exceptions import AuthenticationException
+from src.exceptions import AuthenticationError
 from src.settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -92,8 +92,8 @@ class TokenHandler:
             Dict: The decoded token payload.
 
         Raises:
-            TokenExpiredException: If the token has expired.
-            AuthenticationException: If the token is invalid or wrong type.
+            TokenExpiredError: If the token has expired.
+            AuthenticationError: If the token is invalid or wrong type.
         """
         try:
             payload = jwt.decode(
@@ -103,9 +103,9 @@ class TokenHandler:
             )
         except JWTError as err:
             logger.warning(f"JWT decode failed: {err}")
-            raise AuthenticationException("Invalid token") from err
+            raise AuthenticationError("Invalid token") from err
         if payload.get(JWT_TYPE_CLAIM) != expected_type:
-            raise AuthenticationException(
+            raise AuthenticationError(
                 f"Expected {expected_type} token, got {payload.get('type')}"
             )
         return payload

@@ -74,9 +74,7 @@ class TestUserCRUD:
                 "password": "testpass123",
             },
         )
-        response = await client.get(
-            "/users/targetuser", headers=admin_headers
-        )
+        response = await client.get("/users/targetuser", headers=admin_headers)
         assert response.status_code == 200
         assert response.json()["username"] == "targetuser"
 
