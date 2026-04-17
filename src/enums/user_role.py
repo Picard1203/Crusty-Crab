@@ -4,13 +4,7 @@ from enum import Enum
 
 
 class UserRole(str, Enum):
-    """Represents all permission levels available in the system.
-
-    Attributes:
-        GUEST: A customer who can place and view their own orders.
-        WORKER: A staff member who can update order statuses.
-        ADMINISTRATOR: A manager with full system access.
-    """
+    """Represents all permission levels available in the system."""
 
     GUEST = "guest"
     WORKER = "worker"

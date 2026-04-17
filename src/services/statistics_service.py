@@ -57,7 +57,10 @@ class StatisticsService:
         logger.info("Fetching daily average profits")
         total = await self._order_repo.sum_total_price({})
         distinct_days = await self._order_repo.count_distinct_order_days()
-        average = 0.0 if distinct_days == 0 else total / distinct_days
+        if distinct_days == 0:
+            average = 0.0
+        else:
+            average = total / distinct_days
         return DailyProfitsResponse(total=total, daily_average=average)
 
     async def get_profits_by_date(

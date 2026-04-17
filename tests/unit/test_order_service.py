@@ -8,16 +8,14 @@ from bson import ObjectId
 
 from src.enums import OrderStatus, UserRole
 from src.exceptions import (
-    AuthorizationException,
-    InvalidStatusTransitionException,
-    NotFoundException,
-    OrderNotModifiableException,
+    AuthorizationError,
+    InvalidStatusTransitionError,
+    NotFoundError,
+    OrderNotModifiableError,
 )
 from src.models.order_document import OrderDocument
 from src.models.user_document import UserDocument
-from src.schemas.order.order_create import OrderCreate
-from src.schemas.order.order_status_update import OrderStatusUpdate
-from src.schemas.order.order_update import OrderUpdate
+from src.schemas.order_models import OrderCreate, OrderStatusUpdate, OrderUpdate
 from src.services.order_service import OrderService
 
 
@@ -127,7 +125,7 @@ class TestGetOrder:
         mock_order_repo: AsyncMock,
         mock_order_factory: AsyncMock,
     ) -> None:
-        """Missing order raises NotFoundException.
+        """Missing order raises NotFoundError.
 
         Args:
             mock_order_repo (AsyncMock): Mocked order repository.
@@ -136,7 +134,7 @@ class TestGetOrder:
         mock_order_repo.get_by_order_number.return_value = None
         service = OrderService(mock_order_repo, mock_order_factory)
         user = _make_user(role=UserRole.WORKER)
-        with pytest.raises(NotFoundException):
+        with pytest.raises(NotFoundError):
             await service.get_order(999, user)
 
     async def test_guest_cannot_access_others_order(
@@ -144,7 +142,7 @@ class TestGetOrder:
         mock_order_repo: AsyncMock,
         mock_order_factory: AsyncMock,
     ) -> None:
-        """Guest accessing another user's order raises AuthorizationException.
+        """Guest accessing another user's order raises AuthorizationError.
 
         Args:
             mock_order_repo (AsyncMock): Mocked order repository.
@@ -154,7 +152,7 @@ class TestGetOrder:
         order = _make_order(orderer_name="other_user")
         mock_order_repo.get_by_order_number.return_value = order
         service = OrderService(mock_order_repo, mock_order_factory)
-        with pytest.raises(AuthorizationException):
+        with pytest.raises(AuthorizationError):
             await service.get_order(1, guest)
 
     async def test_guest_can_access_own_order(
@@ -185,7 +183,7 @@ class TestUpdateOrder:
         mock_order_repo: AsyncMock,
         mock_order_factory: AsyncMock,
     ) -> None:
-        """Updating a complete order raises OrderNotModifiableException.
+        """Updating a complete order raises OrderNotModifiableError.
 
         Args:
             mock_order_repo (AsyncMock): Mocked order repository.
@@ -196,7 +194,7 @@ class TestUpdateOrder:
         mock_order_repo.get_by_order_number.return_value = order
         service = OrderService(mock_order_repo, mock_order_factory)
         data = OrderUpdate(items=["Lazanja"])
-        with pytest.raises(OrderNotModifiableException):
+        with pytest.raises(OrderNotModifiableError):
             await service.update_order(1, data, user)
 
     async def test_raises_not_modifiable_for_cancelled_order(
@@ -204,7 +202,7 @@ class TestUpdateOrder:
         mock_order_repo: AsyncMock,
         mock_order_factory: AsyncMock,
     ) -> None:
-        """Updating a cancelled order raises OrderNotModifiableException.
+        """Updating a cancelled order raises OrderNotModifiableError.
 
         Args:
             mock_order_repo (AsyncMock): Mocked order repository.
@@ -215,7 +213,7 @@ class TestUpdateOrder:
         mock_order_repo.get_by_order_number.return_value = order
         service = OrderService(mock_order_repo, mock_order_factory)
         data = OrderUpdate(items=["Lazanja"])
-        with pytest.raises(OrderNotModifiableException):
+        with pytest.raises(OrderNotModifiableError):
             await service.update_order(1, data, user)
 
 
@@ -249,7 +247,7 @@ class TestUpdateOrderStatus:
         mock_order_repo: AsyncMock,
         mock_order_factory: AsyncMock,
     ) -> None:
-        """Invalid status transition raises InvalidStatusTransitionException.
+        """Invalid status transition raises InvalidStatusTransitionError.
 
         Args:
             mock_order_repo (AsyncMock): Mocked order repository.
@@ -260,7 +258,7 @@ class TestUpdateOrderStatus:
         mock_order_repo.get_by_order_number.return_value = order
         service = OrderService(mock_order_repo, mock_order_factory)
         data = OrderStatusUpdate(status=OrderStatus.ORDER_COMPLETE)
-        with pytest.raises(InvalidStatusTransitionException):
+        with pytest.raises(InvalidStatusTransitionError):
             await service.update_order_status(1, data, worker)
 
     async def test_admin_can_bypass_transition_check(

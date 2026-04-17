@@ -3,7 +3,7 @@
 import logging
 from typing import Any, Dict
 
-from src.exceptions import NotFoundException
+from src.exceptions import NotFoundError
 from src.models import UserDocument
 from src.repositories import UserRepository
 from src.schemas import PaginatedResponse, UserUpdate
@@ -36,12 +36,12 @@ class UserService:
             UserDocument: The found user document.
 
         Raises:
-            NotFoundException: If no user exists with this username.
+            NotFoundError: If no user exists with this username.
         """
         logger.info(f"Fetching user '{username}'")
         user = await self._repository.get_by_username(username)
         if user is None:
-            raise NotFoundException(f"User '{username}' not found")
+            raise NotFoundError(f"User '{username}' not found")
         return user
 
     async def get_all_users(
@@ -80,7 +80,7 @@ class UserService:
             UserDocument: The updated user document.
 
         Raises:
-            NotFoundException: If no user exists with this username.
+            NotFoundError: If no user exists with this username.
         """
         logger.info(f"Updating user '{username}'")
         user = await self._get_existing_user(username)
@@ -94,7 +94,7 @@ class UserService:
             username (str): The username of the user to delete.
 
         Raises:
-            NotFoundException: If no user exists with this username.
+            NotFoundError: If no user exists with this username.
         """
         logger.info(f"Deleting user '{username}'")
         user = await self._get_existing_user(username)
@@ -110,11 +110,11 @@ class UserService:
             UserDocument: The found user document.
 
         Raises:
-            NotFoundException: If no user exists with the given username.
+            NotFoundError: If no user exists with the given username.
         """
         user = await self._repository.get_by_username(username)
         if user is None:
-            raise NotFoundException(f"User '{username}' not found")
+            raise NotFoundError(f"User '{username}' not found")
         return user
 
     async def _apply_update(
@@ -130,10 +130,10 @@ class UserService:
             UserDocument: The updated user document.
 
         Raises:
-            NotFoundException: If the update fails because the record was
+            NotFoundError: If the update fails because the record was
                 not found.
         """
         updated = await self._repository.update(internal_id, update_data)
         if updated is None:
-            raise NotFoundException("User record missing during update")
+            raise NotFoundError("User record missing during update")
         return updated

@@ -9,7 +9,7 @@ from bson import ObjectId
 from src.auth.password_handler import PasswordHandler
 from src.auth.token_handler import TokenHandler
 from src.enums import UserRole
-from src.exceptions import AuthenticationException, DuplicateException
+from src.exceptions import AuthenticationError, DuplicateError
 from src.models.user_document import UserDocument
 from src.schemas.auth.user_create import UserCreate
 from src.services.auth_service import AuthService
@@ -78,7 +78,7 @@ class TestRegister:
         password_handler: PasswordHandler,
         token_handler: TokenHandler,
     ) -> None:
-        """Existing username raises DuplicateException.
+        """Existing username raises DuplicateError.
 
         Args:
             mock_user_repo (AsyncMock): Mocked user repository.
@@ -92,7 +92,7 @@ class TestRegister:
             email="new@example.com",
             password="securepassword",
         )
-        with pytest.raises(DuplicateException):
+        with pytest.raises(DuplicateError):
             await service.register(data)
 
     async def test_raises_duplicate_on_existing_email(
@@ -101,7 +101,7 @@ class TestRegister:
         password_handler: PasswordHandler,
         token_handler: TokenHandler,
     ) -> None:
-        """Existing email raises DuplicateException.
+        """Existing email raises DuplicateError.
 
         Args:
             mock_user_repo (AsyncMock): Mocked user repository.
@@ -116,7 +116,7 @@ class TestRegister:
             email="test@example.com",
             password="securepassword",
         )
-        with pytest.raises(DuplicateException):
+        with pytest.raises(DuplicateError):
             await service.register(data)
 
 
@@ -150,7 +150,7 @@ class TestAuthenticate:
         password_handler: PasswordHandler,
         token_handler: TokenHandler,
     ) -> None:
-        """Wrong password raises AuthenticationException.
+        """Wrong password raises AuthenticationError.
 
         Args:
             mock_user_repo (AsyncMock): Mocked user repository.
@@ -160,7 +160,7 @@ class TestAuthenticate:
         user = _make_user()
         mock_user_repo.get_by_username.return_value = user
         service = AuthService(mock_user_repo, password_handler, token_handler)
-        with pytest.raises(AuthenticationException):
+        with pytest.raises(AuthenticationError):
             await service.authenticate("testuser", "wrong-password")
 
     async def test_raises_on_inactive_user(
@@ -169,7 +169,7 @@ class TestAuthenticate:
         password_handler: PasswordHandler,
         token_handler: TokenHandler,
     ) -> None:
-        """Inactive user raises AuthenticationException.
+        """Inactive user raises AuthenticationError.
 
         Args:
             mock_user_repo (AsyncMock): Mocked user repository.
@@ -179,5 +179,5 @@ class TestAuthenticate:
         user = _make_user(is_active=False)
         mock_user_repo.get_by_username.return_value = user
         service = AuthService(mock_user_repo, password_handler, token_handler)
-        with pytest.raises(AuthenticationException):
+        with pytest.raises(AuthenticationError):
             await service.authenticate("testuser", "correct-password")

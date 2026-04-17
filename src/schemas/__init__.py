@@ -14,7 +14,8 @@ from src.schemas.menu_item import (
     MenuItemResponse,
     MenuItemUpdate,
 )
-from src.schemas.order import (
+from src.schemas.order_models import (
+    OrderBase,
     OrderCreate,
     OrderCreateResponse,
     OrderFilter,

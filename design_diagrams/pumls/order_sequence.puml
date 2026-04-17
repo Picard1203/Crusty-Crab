@@ -39,7 +39,7 @@ loop for each item in data.items
     DB --> MenuRepo: MenuItemDocument | None
     MenuRepo --> Factory: item or None
     alt item not found or inactive
-        Factory --> Service: raise MenuItemUnavailableException
+        Factory --> Service: raise MenuItemUnavailableError
         Service --> Router: 422 Unprocessable Content
         Router --> Client: {"detail": "Item ... unavailable"}
     end

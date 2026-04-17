@@ -10,7 +10,7 @@ from src.constants.auth_constants import (
     JWT_SUB_CLAIM,
     REFRESH_TOKEN_TYPE,
 )
-from src.exceptions import AuthenticationException, DuplicateException
+from src.exceptions import AuthenticationError, DuplicateError
 from src.models import UserDocument
 from src.repositories import UserRepository
 from src.schemas import TokenResponse, UserCreate
@@ -54,7 +54,7 @@ class AuthService:
             UserDocument: The created user document.
 
         Raises:
-            DuplicateException: If username or email already exists.
+            DuplicateError: If username or email already exists.
         """
         logger.info(f"Registering user '{data.username}'")
         await self._check_username(data.username)
@@ -78,11 +78,11 @@ class AuthService:
             username (str): The username to check.
 
         Raises:
-            DuplicateException: If the username already exists.
+            DuplicateError: If the username already exists.
         """
         existing_user = await self._user_repo.get_by_username(username)
         if existing_user is not None:
-            raise DuplicateException(f"Username '{username}' is already taken")
+            raise DuplicateError(f"Username '{username}' is already taken")
 
     async def _check_email(self, email: str) -> None:
         """Check if the given email already exists.
@@ -91,11 +91,11 @@ class AuthService:
             email (str): The email to check.
 
         Raises:
-            DuplicateException: If the email already exists.
+            DuplicateError: If the email already exists.
         """
         existing_user = await self._user_repo.get_by_email(email)
         if existing_user is not None:
-            raise DuplicateException(f"Email '{email}' is already registered")
+            raise DuplicateError(f"Email '{email}' is already registered")
 
     async def authenticate(
         self, username: str, password: str
@@ -110,22 +110,22 @@ class AuthService:
             TokenResponse: The access and refresh token pair.
 
         Raises:
-            AuthenticationException: If credentials are invalid or user
+            AuthenticationError: If credentials are invalid or user
                 is inactive.
         """
         logger.info(f"Authenticating user '{username}'")
         user = await self._user_repo.get_by_username(username)
         if user is None:
-            raise AuthenticationException("Invalid username or password")
+            raise AuthenticationError("Invalid username or password")
         if (
             self._password_handler.verify_password(
                 password, user.hashed_password
             )
             is False
         ):
-            raise AuthenticationException("Invalid username or password")
+            raise AuthenticationError("Invalid username or password")
         if user.is_active is False:
-            raise AuthenticationException("User account is deactivated")
+            raise AuthenticationError("User account is deactivated")
         return self._build_token_response(user)
 
     async def refresh_token(self, refresh_token: str) -> TokenResponse:
@@ -138,7 +138,7 @@ class AuthService:
             TokenResponse: A new access and refresh token pair.
 
         Raises:
-            AuthenticationException: If the refresh token is invalid
+            AuthenticationError: If the refresh token is invalid
                 or the user no longer exists/is inactive.
         """
         logger.info("Refreshing token")
@@ -158,7 +158,7 @@ class AuthService:
             UserDocument: The authenticated user.
 
         Raises:
-            AuthenticationException: If the token is invalid or user not found.
+            AuthenticationError: If the token is invalid or user not found.
         """
         username = self._extract_username_from_token(
             token, ACCESS_TOKEN_TYPE
@@ -177,13 +177,13 @@ class AuthService:
             UserDocument: The validated active user.
 
         Raises:
-            AuthenticationException: If user not found or account is deactivated.
+            AuthenticationError: If user not found or account is deactivated.
         """
         user = await self._user_repo.get_by_username(username)
         if user is None:
-            raise AuthenticationException("User not found")
+            raise AuthenticationError("User not found")
         if user.is_active is False:
-            raise AuthenticationException("User account is deactivated")
+            raise AuthenticationError("User account is deactivated")
         return user
 
     def _build_token_response(self, user: UserDocument) -> TokenResponse:
@@ -216,12 +216,12 @@ class AuthService:
             str: The extracted username.
 
         Raises:
-            AuthenticationException: If the token payload is invalid.
+            AuthenticationError: If the token payload is invalid.
         """
         payload = self._token_handler.decode_token(
             token, expected_type=expected_type
         )
         username = payload.get(JWT_SUB_CLAIM)
         if username is None:
-            raise AuthenticationException("Invalid token payload")
+            raise AuthenticationError("Invalid token payload")
         return username

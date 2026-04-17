@@ -7,10 +7,10 @@ from typing import Any, Dict
 from src.constants.order_constants import WORKER_ALLOWED_TRANSITIONS
 from src.enums import OrderStatus, UserRole
 from src.exceptions import (
-    AuthorizationException,
-    InvalidStatusTransitionException,
-    NotFoundException,
-    OrderNotModifiableException,
+    AuthorizationError,
+    InvalidStatusTransitionError,
+    NotFoundError,
+    OrderNotModifiableError,
 )
 from src.factories import OrderFactory
 from src.models import OrderDocument, UserDocument
@@ -66,7 +66,7 @@ class OrderService:
             OrderDocument: The persisted order document.
 
         Raises:
-            MenuItemUnavailableException: If any requested item is unavailable.
+            MenuItemUnavailableError: If any requested item is unavailable.
         """
         logger.info(f"Creating order for user '{current_user.username}'")
         order_data = OrderCreate(
@@ -89,8 +89,8 @@ class OrderService:
             OrderDocument: The found order document.
 
         Raises:
-            NotFoundException: If no order exists with this number.
-            AuthorizationException: If a guest tries to access another's order.
+            NotFoundError: If no order exists with this number.
+            AuthorizationError: If a guest tries to access another's order.
         """
         logger.info(f"Fetching order {order_number}")
         order = await self._get_existing_order(order_number)
@@ -146,9 +146,9 @@ class OrderService:
             OrderDocument: The updated order document.
 
         Raises:
-            NotFoundException: If the order does not exist.
-            AuthorizationException: If a guest accesses another user's order.
-            OrderNotModifiableException: If the order is complete or cancelled.
+            NotFoundError: If the order does not exist.
+            AuthorizationError: If a guest accesses another user's order.
+            OrderNotModifiableError: If the order is complete or cancelled.
         """
         logger.info(f"Updating order {order_number}")
         order = await self._get_existing_order(order_number)
@@ -177,9 +177,9 @@ class OrderService:
             current_user (UserDocument): The authenticated requesting user.
 
         Raises:
-            NotFoundException: If the order does not exist.
-            AuthorizationException: If a guest accesses another user's order.
-            OrderNotModifiableException: If the order is complete or cancelled.
+            NotFoundError: If the order does not exist.
+            AuthorizationError: If a guest accesses another user's order.
+            OrderNotModifiableError: If the order is complete or cancelled.
         """
         logger.info(f"Deleting order {order_number}")
         order = await self._get_existing_order(order_number)
@@ -204,8 +204,8 @@ class OrderService:
             OrderDocument: The updated order document.
 
         Raises:
-            NotFoundException: If the order does not exist.
-            InvalidStatusTransitionException: If the transition is disallowed
+            NotFoundError: If the order does not exist.
+            InvalidStatusTransitionError: If the transition is disallowed
                 for the current role.
         """
         logger.info(
@@ -230,11 +230,11 @@ class OrderService:
             OrderDocument: The found order document.
 
         Raises:
-            NotFoundException: If no order exists with the given number.
+            NotFoundError: If no order exists with the given number.
         """
         order = await self._repository.get_by_order_number(order_number)
         if order is None:
-            raise NotFoundException(
+            raise NotFoundError(
                 f"Order with number {order_number} not found"
             )
         return order
@@ -249,13 +249,13 @@ class OrderService:
             current_user (UserDocument): The authenticated user.
 
         Raises:
-            AuthorizationException: If a guest accesses another user's order.
+            AuthorizationError: If a guest accesses another user's order.
         """
         if (
             current_user.role == UserRole.GUEST
             and order.orderer_name != current_user.username
         ):
-            raise AuthorizationException(
+            raise AuthorizationError(
                 "You are not authorized to access this order"
             )
 
@@ -266,10 +266,10 @@ class OrderService:
             order (OrderDocument): The order to check.
 
         Raises:
-            OrderNotModifiableException: If the order is complete or cancelled.
+            OrderNotModifiableError: If the order is complete or cancelled.
         """
         if order.status in _TERMINAL_STATUSES:
-            raise OrderNotModifiableException(
+            raise OrderNotModifiableError(
                 f"Order {order.order_number} cannot be modified — "
                 f"status is '{order.status.value}'"
             )
@@ -287,12 +287,12 @@ class OrderService:
             OrderDocument: The updated order document.
 
         Raises:
-            NotFoundException: If the update fails because the record was
+            NotFoundError: If the update fails because the record was
                 not found.
         """
         updated = await self._repository.update(internal_id, update_data)
         if updated is None:
-            raise NotFoundException("Order record missing during update")
+            raise NotFoundError("Order record missing during update")
         return updated
 
     @staticmethod
@@ -306,11 +306,11 @@ class OrderService:
             new (OrderStatus): The requested new status.
 
         Raises:
-            InvalidStatusTransitionException: If the transition is not in
+            InvalidStatusTransitionError: If the transition is not in
                 the allowed transitions list.
         """
         if (current.value, new.value) not in WORKER_ALLOWED_TRANSITIONS:
-            raise InvalidStatusTransitionException(
+            raise InvalidStatusTransitionError(
                 f"Transition from '{current.value}' to '{new.value}' "
                 f"is not allowed"
             )

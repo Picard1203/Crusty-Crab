@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock
 import pytest
 from bson import ObjectId
 
-from src.exceptions import DuplicateException, NotFoundException
+from src.exceptions import DuplicateError, NotFoundError
 from src.models.menu_item_document import MenuItemDocument
 from src.schemas.menu_item.menu_item_create import MenuItemCreate
 from src.schemas.menu_item.menu_item_update import MenuItemUpdate
@@ -71,7 +71,7 @@ class TestCreateMenuItem:
         mock_menu_item_repo: AsyncMock,
         mock_menu_item_factory: AsyncMock,
     ) -> None:
-        """Existing name raises DuplicateException.
+        """Existing name raises DuplicateError.
 
         Args:
             mock_menu_item_repo (AsyncMock): Mocked menu item repository.
@@ -80,7 +80,7 @@ class TestCreateMenuItem:
         mock_menu_item_repo.get_by_name.return_value = _make_item()
         service = MenuItemService(mock_menu_item_repo, mock_menu_item_factory)
         data = MenuItemCreate(name="Schnitzel Alef", price=66.0)
-        with pytest.raises(DuplicateException):
+        with pytest.raises(DuplicateError):
             await service.create_menu_item(data)
 
 
@@ -110,7 +110,7 @@ class TestGetMenuItem:
         mock_menu_item_repo: AsyncMock,
         mock_menu_item_factory: AsyncMock,
     ) -> None:
-        """Missing item raises NotFoundException.
+        """Missing item raises NotFoundError.
 
         Args:
             mock_menu_item_repo (AsyncMock): Mocked menu item repository.
@@ -118,7 +118,7 @@ class TestGetMenuItem:
         """
         mock_menu_item_repo.get_by_item_number.return_value = None
         service = MenuItemService(mock_menu_item_repo, mock_menu_item_factory)
-        with pytest.raises(NotFoundException):
+        with pytest.raises(NotFoundError):
             await service.get_menu_item(999)
 
 
@@ -131,7 +131,7 @@ class TestUpdateMenuItem:
         mock_menu_item_repo: AsyncMock,
         mock_menu_item_factory: AsyncMock,
     ) -> None:
-        """Name already used by another item raises DuplicateException.
+        """Name already used by another item raises DuplicateError.
 
         Args:
             mock_menu_item_repo (AsyncMock): Mocked menu item repository.
@@ -143,7 +143,7 @@ class TestUpdateMenuItem:
         mock_menu_item_repo.get_by_name.return_value = other_item
         service = MenuItemService(mock_menu_item_repo, mock_menu_item_factory)
         data = MenuItemUpdate(name="Lazanja")
-        with pytest.raises(DuplicateException):
+        with pytest.raises(DuplicateError):
             await service.update_menu_item(1, data)
 
 

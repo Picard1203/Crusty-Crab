@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from src.exceptions import DuplicateException, NotFoundException
+from src.exceptions import DuplicateError, NotFoundError
 from src.factories import MenuItemFactory
 from src.models import MenuItemDocument
 from src.repositories import MenuItemRepository
@@ -45,12 +45,12 @@ class MenuItemService:
             MenuItemDocument: The found menu item.
 
         Raises:
-            NotFoundException: If no menu item exists with this number.
+            NotFoundError: If no menu item exists with this number.
         """
         logger.info(f"Fetching menu item {item_number}")
         item = await self._repository.get_by_item_number(item_number)
         if item is None:
-            raise NotFoundException(
+            raise NotFoundError(
                 f"Menu item with number {item_number} not found"
             )
         return item
@@ -99,12 +99,12 @@ class MenuItemService:
             MenuItemDocument: The persisted menu item document.
 
         Raises:
-            DuplicateException: If a menu item with this name already exists.
+            DuplicateError: If a menu item with this name already exists.
         """
         logger.info(f"Creating menu item '{data.name}'")
         existing = await self._repository.get_by_name(data.name)
         if existing is not None:
-            raise DuplicateException(
+            raise DuplicateError(
                 f"Menu item with name '{data.name}' already exists"
             )
         item = await self._factory.create(data)
@@ -123,8 +123,8 @@ class MenuItemService:
             MenuItemDocument: The updated menu item document.
 
         Raises:
-            NotFoundException: If no menu item exists with this number.
-            DuplicateException: If the updated name conflicts with an existing item.
+            NotFoundError: If no menu item exists with this number.
+            DuplicateError: If the updated name conflicts with an existing item.
         """
         logger.info(f"Updating menu item {item_number}")
         item = await self._get_existing_item(item_number)
@@ -143,7 +143,7 @@ class MenuItemService:
             item_number (int): The business ID of the menu item to deactivate.
 
         Raises:
-            NotFoundException: If no menu item exists with this number.
+            NotFoundError: If no menu item exists with this number.
         """
         logger.info(f"Soft-deleting menu item {item_number}")
         item = await self._get_existing_item(item_number)
@@ -165,11 +165,11 @@ class MenuItemService:
             MenuItemDocument: The found menu item document.
 
         Raises:
-            NotFoundException: If no item exists with the given number.
+            NotFoundError: If no item exists with the given number.
         """
         item = await self._repository.get_by_item_number(item_number)
         if item is None:
-            raise NotFoundException(
+            raise NotFoundError(
                 f"Menu item with number {item_number} not found"
             )
         return item
@@ -184,11 +184,11 @@ class MenuItemService:
             name (str): The new name to check for duplicates.
 
         Raises:
-            DuplicateException: If another menu item with the same name exists.
+            DuplicateError: If another menu item with the same name exists.
         """
         existing = await self._repository.get_by_name(name)
         if (existing is not None) and (existing.id != internal_id):
-            raise DuplicateException(
+            raise DuplicateError(
                 f"Menu item with name '{name}' already exists"
             )
 
@@ -205,12 +205,12 @@ class MenuItemService:
             MenuItemDocument: The updated menu item document.
 
         Raises:
-            NotFoundException: If the update fails because the record was
+            NotFoundError: If the update fails because the record was
                 not found.
         """
         updated = await self._repository.update(internal_id, update_data)
         if updated is None:
-            raise NotFoundException(
+            raise NotFoundError(
                 "Menu item record missing during update"
             )
         return updated
