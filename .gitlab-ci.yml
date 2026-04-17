@@ -1,0 +1,83 @@
+# =============================================================================
+# AIR-GAP SETUP
+# =============================================================================
+# Before first run in an air-gapped environment:
+#
+# 1. Mirror the following images to your internal container registry:
+#    - python:3.14-slim  (or your preferred Python 3.14 base image)
+#    - mongo:7           (MongoDB 7 for the replica set service)
+#
+# 2. Set these CI/CD variables in GitLab project settings → CI/CD → Variables:
+#    - CI_REGISTRY_IMAGE  : your internal registry prefix (e.g. registry.company.il)
+#    - PYTHON_IMAGE       : full image path (e.g. registry.company.il/python:3.14-slim)
+#    - MONGO_IMAGE        : full image path (e.g. registry.company.il/mongo:7)
+#    - PIP_INDEX_URL      : internal PyPI mirror (e.g. https://nexus.company.il/pypi/simple)
+#
+# 3. If variables are not set, the defaults below point to public registries,
+#    which is fine for internet-connected environments.
+# =============================================================================
+
+variables:
+  PYTHON_IMAGE: "python:3.14-slim"
+  MONGO_IMAGE: "mongo:7"
+  PIP_INDEX_URL: "https://pypi.org/simple"
+
+stages:
+  - lint
+  - test
+
+# ---------------------------------------------------------------------------
+# Lint stage
+# ---------------------------------------------------------------------------
+lint:
+  stage: lint
+  image: $PYTHON_IMAGE
+  before_script:
+    - pip install --index-url $PIP_INDEX_URL ruff
+  script:
+    - ruff check src/ tests/
+
+# ---------------------------------------------------------------------------
+# Test stage — spins up a MongoDB replica set as a service
+# ---------------------------------------------------------------------------
+test:
+  stage: test
+  image: $PYTHON_IMAGE
+  services:
+    - name: $MONGO_IMAGE
+      alias: mongo
+      command:
+        - mongod
+        - --replSet
+        - rs0
+        - --bind_ip_all
+  before_script:
+    # Install mongosh to initialise the replica set.
+    # In an air-gapped environment, pre-install mongosh in your PYTHON_IMAGE
+    # or mirror the mongosh package to your internal registry / package mirror.
+    - apt-get update -qq && apt-get install -y -qq gnupg curl
+    - curl -fsSL https://pgp.mongodb.com/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
+    - echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+    - apt-get update -qq && apt-get install -y -qq mongodb-mongosh
+    - sleep 5
+    - mongosh --host mongo --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]})"
+    - sleep 5
+    - pip install --index-url $PIP_INDEX_URL -r requirements.txt
+  script:
+    - pytest -v --tb=short
+  variables:
+    APP_NAME: "The Krusty Crab"
+    APP_VERSION: "1.0.0"
+    DEBUG: "false"
+    LOG_LEVEL: "WARNING"
+    MONGODB_URL: "mongodb://mongo:27017/?replicaSet=rs0&directConnection=true"
+    DATABASE_NAME: "krusty_crab_test"
+    JWT_SECRET: "ci-test-secret-key-not-for-production"
+    JWT_ALGORITHM: "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+    REFRESH_TOKEN_EXPIRE_DAYS: "7"
+    ALLOWED_ORIGINS: '["*"]'
+    RATE_LIMIT_PER_MINUTE: "120"
+    PAGINATION_DEFAULT_LIMIT: "10"
+    PAGINATION_MAX_LIMIT: "100"
+  needs: [lint]

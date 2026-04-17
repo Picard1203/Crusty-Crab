@@ -1,0 +1,257 @@
+@startuml Krusty Crab - Class Diagram
+!pragma layout smetana
+
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam groupInheritance 2
+skinparam packageStyle rectangle
+skinparam packageBackgroundColor #FAFAFA
+skinparam packageBorderColor #AAAAAA
+skinparam packageFontStyle bold
+skinparam ArrowColor #555555
+skinparam ClassBorderColor #666666
+
+' ─────────────────────────────────────────
+' Enums
+' ─────────────────────────────────────────
+
+package "Enums" #EEF4FF {
+
+    enum OrderStatus {
+        ORDER_RECEIVED
+        ORDER_CONFIRMED
+        ORDER_BEING_PREPARED
+        ORDER_READY
+        ORDER_COMPLETE
+        ORDER_CANCELLED
+    }
+
+    enum UserRole {
+        GUEST
+        WORKER
+        ADMINISTRATOR
+    }
+}
+
+' ─────────────────────────────────────────
+' Models
+' ─────────────────────────────────────────
+
+package "Models" #FFF8EE {
+
+    abstract class BaseDocument {
+        +id: ObjectId
+        +created_at: datetime
+    }
+
+    class OrderDocument {
+        +order_number: int
+        +orderer_name: str
+        +items: List[str]
+        +item_price_snapshot: List[float]
+        +total_price: float
+        +status: OrderStatus
+        +updated_at: datetime
+    }
+
+    class MenuItemDocument {
+        +item_number: int
+        +name: str
+        +price: float
+        +is_active: bool
+        +updated_at: datetime
+    }
+
+    class UserDocument {
+        +username: str
+        +email: str
+        +hashed_password: str
+        +role: UserRole
+        +is_active: bool
+    }
+
+    class CounterDocument {
+        +id: str
+        +sequence_value: int
+    }
+
+    BaseDocument <|-- OrderDocument
+    BaseDocument <|-- MenuItemDocument
+    BaseDocument <|-- UserDocument
+}
+
+OrderDocument --> OrderStatus
+UserDocument --> UserRole
+
+' ─────────────────────────────────────────
+' Repositories
+' ─────────────────────────────────────────
+
+package "Repositories" #EEFBEE {
+
+    package "Interfaces" #F5FFF5 {
+
+        abstract class BaseRepository {
+            +get_all(skip, limit, filters)
+            +get_by_id(entity_id)
+            +create(entity)
+            +update(entity_id, data)
+            +delete(entity_id)
+            +count(filters)
+        }
+
+        abstract class OrderRepository {
+            +get_by_order_number(order_number)
+            +sum_total_price(filters)
+            +aggregate_by_status()
+            +aggregate_by_hour(date_filter)
+            +aggregate_top_customers(limit)
+            +aggregate_item_profitability()
+            +count_distinct_order_days()
+            +get_average_items_per_order()
+        }
+
+        abstract class MenuItemRepository {
+            +get_by_item_number(item_number)
+            +get_by_name(name)
+            +get_active_items()
+        }
+
+        abstract class UserRepository {
+            +get_by_username(username)
+            +get_by_email(email)
+        }
+
+        abstract class CounterRepository {
+            +get_next_sequence(name)
+        }
+
+        BaseRepository <|-- OrderRepository
+        BaseRepository <|-- MenuItemRepository
+        BaseRepository <|-- UserRepository
+    }
+
+    package "MongoDB" #F0FFF0 {
+        class MongoOrderRepository
+        class MongoMenuItemRepository
+        class MongoUserRepository
+        class MongoCounterRepository
+    }
+
+    OrderRepository <|-- MongoOrderRepository
+    MenuItemRepository <|-- MongoMenuItemRepository
+    UserRepository <|-- MongoUserRepository
+    CounterRepository <|-- MongoCounterRepository
+}
+
+' ─────────────────────────────────────────
+' Factories
+' ─────────────────────────────────────────
+
+package "Factories" #FFF0F8 {
+
+    abstract class DocumentFactory {
+        +create(data)
+    }
+
+    class OrderFactory {
+        -_counter_repo: CounterRepository
+        -_menu_item_repo: MenuItemRepository
+        +create(data: OrderCreate): OrderDocument
+        +compute_total(items): Tuple[List[float], float]
+    }
+
+    class MenuItemFactory {
+        -_counter_repo: CounterRepository
+        +create(data: MenuItemCreate): MenuItemDocument
+    }
+
+    DocumentFactory <|-- OrderFactory
+    DocumentFactory <|-- MenuItemFactory
+}
+
+OrderFactory --> CounterRepository
+OrderFactory --> MenuItemRepository
+MenuItemFactory --> CounterRepository
+
+' ─────────────────────────────────────────
+' Services
+' ─────────────────────────────────────────
+
+package "Services" #FFF5EE {
+
+    class AuthService {
+        +register(data): UserDocument
+        +authenticate(username, password): TokenResponse
+        +refresh_token(token): TokenResponse
+        +get_current_user(token): UserDocument
+    }
+
+    class OrderService {
+        +create_order(data, user): OrderDocument
+        +get_order(order_number, user): OrderDocument
+        +get_all_orders(skip, limit, filters, user)
+        +update_order(order_number, data, user): OrderDocument
+        +delete_order(order_number, user)
+        +update_order_status(order_number, data, user): OrderDocument
+    }
+
+    class MenuItemService {
+        +get_menu_item(item_number): MenuItemDocument
+        +get_active_menu(): List[MenuItemDocument]
+        +get_all_menu_items(skip, limit)
+        +create_menu_item(data): MenuItemDocument
+        +update_menu_item(item_number, data): MenuItemDocument
+        +delete_menu_item(item_number)
+    }
+
+    class StatisticsService {
+        +get_total_profits(): StatisticsResponse
+        +get_daily_average_profits(): DailyProfitsResponse
+        +get_profits_by_date(date): StatisticsResponse
+        +get_most_profitable_item(): StatisticsResponse
+        +get_least_profitable_item(): StatisticsResponse
+        +get_orders_by_status(): List[OrderStatusBreakdownResponse]
+        +get_busiest_hour(): BusiestHourResponse
+        +get_average_order_size(): StatisticsResponse
+        +get_top_customers(limit): List[TopCustomerResponse]
+    }
+
+    class UserService {
+        +get_user(username): UserDocument
+        +get_all_users(skip, limit)
+        +update_user(username, data): UserDocument
+        +delete_user(username)
+    }
+}
+
+AuthService --> UserRepository
+AuthService --> PasswordHandler
+AuthService --> TokenHandler
+OrderService --> OrderRepository
+OrderService --> OrderFactory
+MenuItemService --> MenuItemRepository
+MenuItemService --> MenuItemFactory
+StatisticsService --> OrderRepository
+StatisticsService --> MenuItemRepository
+UserService --> UserRepository
+
+' ─────────────────────────────────────────
+' Auth Handlers
+' ─────────────────────────────────────────
+
+package "Auth Handlers" #F0F0FF {
+
+    class PasswordHandler {
+        +hash_password(password): str
+        +verify_password(plain, hashed): bool
+    }
+
+    class TokenHandler {
+        +create_access_token(data): str
+        +create_refresh_token(data): str
+        +decode_token(token, expected_type): dict
+    }
+}
+
+@enduml

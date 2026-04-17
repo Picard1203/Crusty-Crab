@@ -1,15 +1,24 @@
 @startuml Krusty Crab - Layered Architecture
 !pragma layout smetana
 
-package "Presentation Layer" {
+top to bottom direction
+
+skinparam packageStyle rectangle
+skinparam packageFontStyle bold
+skinparam ArrowColor #444444
+skinparam ComponentBorderColor #666666
+skinparam componentStyle rectangle
+
+package "Presentation Layer" #DDEEFF {
     [auth_router]
     [order_router]
     [menu_router]
+    [profits_router]
     [statistics_router]
     [user_router]
 }
 
-package "Business Logic Layer" {
+package "Business Logic Layer" #DDFFD4 {
     [AuthService]
     [OrderService]
     [MenuItemService]
@@ -17,58 +26,77 @@ package "Business Logic Layer" {
     [UserService]
 }
 
-package "Data Access Layer" {
-    [OrderRepository <<ABC>>]
-    [MenuItemRepository <<ABC>>]
-    [UserRepository <<ABC>>]
-    [CounterRepository <<ABC>>]
-    [MongoOrderRepository]
-    [MongoMenuItemRepository]
-    [MongoUserRepository]
-    [MongoCounterRepository]
+package "Data Access Layer" #FFF3CC {
+    package "Interfaces (ABC)" #FFFBE8 {
+        [OrderRepository]
+        [MenuItemRepository]
+        [UserRepository]
+        [CounterRepository]
+    }
+    package "MongoDB Implementations" #FFFBE8 {
+        [MongoOrderRepository]
+        [MongoMenuItemRepository]
+        [MongoUserRepository]
+        [MongoCounterRepository]
+    }
 }
 
-package "Factory Layer" {
+package "Factory Layer" #FFE8F0 {
     [OrderFactory]
     [MenuItemFactory]
 }
 
-package "Infrastructure" {
+package "Infrastructure" #EEE8FF {
     [Database <<ABC>>]
     [MongoDatabase]
     [MongoDB Replica Set]
 }
 
-package "Cross-Cutting" {
+package "Cross-Cutting" #F5F5F5 {
     [deps.py - Composition Root]
     [RequestLoggingMiddleware]
-    [AuthService - JWT]
     [Settings]
     [Logging]
 }
 
-[auth_router] --> [AuthService]
-[order_router] --> [OrderService]
-[menu_router] --> [MenuItemService]
+' Presentation -> Business Logic
+[auth_router]       --> [AuthService]
+[order_router]      --> [OrderService]
+[menu_router]       --> [MenuItemService]
+[profits_router]    --> [StatisticsService]
 [statistics_router] --> [StatisticsService]
-[user_router] --> [UserService]
+[user_router]       --> [UserService]
 
-[OrderService] --> [OrderRepository <<ABC>>]
-[OrderService] --> [MenuItemRepository <<ABC>>]
-[OrderService] --> [OrderFactory]
-[MenuItemService] --> [MenuItemRepository <<ABC>>]
-[MenuItemService] --> [MenuItemFactory]
-[StatisticsService] --> [OrderRepository <<ABC>>]
-[AuthService] --> [UserRepository <<ABC>>]
-[UserService] --> [UserRepository <<ABC>>]
+' Business Logic -> Data Access
+[AuthService]       --> [UserRepository]
+[OrderService]      --> [OrderRepository]
+[OrderService]      --> [MenuItemRepository]
+[MenuItemService]   --> [MenuItemRepository]
+[StatisticsService] --> [OrderRepository]
+[StatisticsService] --> [MenuItemRepository]
+[UserService]       --> [UserRepository]
 
-[OrderRepository <<ABC>>] <|-- [MongoOrderRepository]
-[MenuItemRepository <<ABC>>] <|-- [MongoMenuItemRepository]
-[UserRepository <<ABC>>] <|-- [MongoUserRepository]
-[CounterRepository <<ABC>>] <|-- [MongoCounterRepository]
+' Business Logic -> Factories
+[OrderService]      --> [OrderFactory]
+[MenuItemService]   --> [MenuItemFactory]
 
-[MongoOrderRepository] --> [MongoDB Replica Set]
-[MongoDatabase] --> [MongoDB Replica Set]
-[Database <<ABC>>] <|-- [MongoDatabase]
+' Interfaces -> Implementations
+[OrderRepository]     <|-- [MongoOrderRepository]
+[MenuItemRepository]  <|-- [MongoMenuItemRepository]
+[UserRepository]      <|-- [MongoUserRepository]
+[CounterRepository]   <|-- [MongoCounterRepository]
+
+' Factories -> Repositories
+[OrderFactory]    --> [CounterRepository]
+[OrderFactory]    --> [MenuItemRepository]
+[MenuItemFactory] --> [CounterRepository]
+
+' Infrastructure
+[Database <<ABC>>]       <|-- [MongoDatabase]
+[MongoDatabase]          --> [MongoDB Replica Set]
+[MongoOrderRepository]   --> [MongoDB Replica Set]
+[MongoMenuItemRepository]--> [MongoDB Replica Set]
+[MongoUserRepository]    --> [MongoDB Replica Set]
+[MongoCounterRepository] --> [MongoDB Replica Set]
 
 @enduml
